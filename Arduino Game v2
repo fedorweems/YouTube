@@ -1,0 +1,274 @@
+/*******************************************************************
+ Arcade Game v1.0
+This is an example for our Monochrome OLEDs based on SSD1306 drivers
+This example is for a 128x32 size display using I2C to communicate
+2 pins are required to interface (2 I2C)
+The code was modified by Fedor Weems.
+*******************************************************************/
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#define OLED_RESET 4  //pin 4 to reset the LED Screen
+Adafruit_SSD1306 display(OLED_RESET);
+
+int a=40; //speed
+long x1,x2,x3,x4,x5; // X-courdinates for the falling objects
+int yy1=-1,yy2=-2,yy3=-3,yy4=-7,yy5=-6 ; // Y-courdinates for falling objects
+int i=63;
+int count = 0; // falling SPEED
+int fullcount = 0; // counts to release CIRCLE AND TRIANGLE
+int hit=0; // score variable
+//////////////////
+ const int buttonPin = 8; // PIN for the switch
+ int buttonState = 0;
+void setup() {
+  x1 = random(-2, 123); // sets random courdinate for the square
+  x2 = random(-2, 123); // sets random courdinate for the square
+  x3 = random(-2, 123); // sets random courdinate for the square
+  x4 = random(-2, 123); // sets random courdinate for the circle
+  x5 = random(-2, 123); // sets random courdinate for the triangle
+pinMode(buttonPin, INPUT);
+
+display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
+// Clear the whole screen.
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+    display.println("Reach score of 500");
+    display.println("And you'll win!");
+    display.display();
+    delay(5000);
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+    display.println("Level 1");
+    display.display();
+    delay(1500);
+    display.clearDisplay();
+} //setup
+
+
+void loop() {
+  ////////////////////////////////////////////////////////////////////////////
+//                x,  y,  width, height, color
+display.fillRect( 0,  0,  128,     32,     BLACK); // make the screen black
+
+buttonState = digitalRead(buttonPin); // read the switch button
+i = map(analogRead(0), 0,1023, -1, 129);   // map potentiometer for the screen width
+win();
+gameover(); // see gameover function below
+levels();
+
+if (count >= a) //speed of the blocks falling down
+{  
+  yy1++; // speed of square 1
+  yy2++; // speed of square 2
+  yy3++; // speed of square 3
+  if ((fullcount>=1000)&&(fullcount<=1999)){ // enter into LEVEL 2
+    yy4++; // falling speed of circle
+    a=30;} // NEW SPEED
+  if ((fullcount>=2000)&&(fullcount<=2999)){ // enter into LEVEL 3
+    yy5++; // falling speed of triangle
+    a=25;} // NEW SPEED
+  if ((fullcount>=3000)&&(fullcount<=3999)){ // enter into LEVEL 4
+    yy5=yy5+2; // New falling speed of triangle
+    a=20;} // NEW SPEED
+  if ((fullcount>=4000)&&(fullcount<=4999)){ // enter into LEVEL 5
+    yy4=yy4+2;
+    yy5=yy5+3; // New falling speed of triangle
+    a=20;} // NEW SPEED
+  if (fullcount>=5000){ // enter into LEVEL 6
+    yy4=yy4+3;
+    yy5=yy5+4; // New falling speed of triangle
+    a=20;} // NEW SPEED
+  count=0;
+} // if count
+  
+
+if (buttonState == LOW) { // if button is pressed then do below
+  //               x1, y1, x2, y2, color
+   display.drawLine( i, 25,   i,  0, WHITE);
+   if ((i>=x1) && (i<=x1+8)){ // if square one is hit
+    yy1=-6;
+    x1 = random(-1, 123);
+    hit++;
+   }
+   if ((i>=x2) && (i<=x2+8)){ // if square two is hit
+    yy2=-6;
+    x2 = random(-1, 123);
+    hit++;
+   }
+   if ((i>=x3) && (i<=x3+8)){ // if square three is hit
+    yy3=-6;
+    x3 = random(-1, 123);
+    hit++;
+   }
+   if ((i>=x4-4) && (i<=x4+4)){ // if circle is hit
+    yy4=-6;
+    x4 = random(-1, 123);
+    hit++;
+   }
+   if ((i>=x5-3) && (i<=x5+3)){ // if triangle is hit
+    yy5=-6;
+    x5 = random(-1, 123);
+    hit++;
+   }
+}
+
+// text display score
+          display.setTextSize(1);
+          display.setTextColor(WHITE);
+          display.setCursor(0,0);
+          display.println(hit);  /// display the score
+//                x,  y,  width, height, color
+display.fillRect( x1,  yy1,     8,     5,     WHITE); // display square one
+//                x,  y,  width, height, color
+display.fillRect( x2,  yy2,     8,     5,     WHITE); // display square two
+//                x,  y,  width, height, color
+display.fillRect( x3,  yy3,     8,     5,     WHITE); // display square three
+            //LEVEL 2
+//                    x,  y,   radius, color
+  display.fillCircle( x4,  yy4,     4, WHITE);  // display circle
+           // LEVEL 3
+ //                         x1, y1,     x2,   y2,    x3,   y3,  color
+    display.fillTriangle(  x5,  yy5,  x5-3, yy5-3,  x5+3, yy5-3,  WHITE);  // display triangle
+
+//                    x1, y1,    x2, y2,    x3, y3, color
+display.fillTriangle(  i,  25,     i-5, 32,    i+5, 32,  WHITE); // display MY SHIP
+display.display();
+delay(5); // refresh rate of the screen
+fullcount++;   // counts to release CIRCLE AND TRIANGLE
+count++;       // counts for the FALLING SPEED
+} //loopï»¿
+
+
+
+
+
+void levels(){
+  if (fullcount==1000){  // level 2
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+    display.println("Level 2");
+    display.display();
+    delay(1000);
+    display.clearDisplay();}
+  if (fullcount==2000){  // level 3
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+    display.println("Level 3");
+    display.display();
+    delay(1000);
+    display.clearDisplay();}
+  if (fullcount==3000){  // level 4
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+    display.println("Level 4");
+    display.display();
+    delay(1000);
+    display.clearDisplay();}
+  if (fullcount==4000){  // level 5
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+    display.println("Level 5");
+    display.display();
+    delay(1000);
+    display.clearDisplay();}
+  if (fullcount==5000){  // level 6
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+    display.println("Level 6");
+    display.display();
+    delay(1000);
+    display.clearDisplay();}
+}
+void win(){
+  if (hit>=500){
+  display.fillRect( 0,  0,  128,     32,     BLACK);
+  display.display();
+  delay(500);
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(5,9);
+  display.println("YOU WIN!");
+  display.display();
+  delay(500);
+  display.fillRect( 0,  0,  128,     32,     BLACK);
+  display.display();
+  delay(500);
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(5,9);
+  display.println("YOU WIN!");
+  display.display();
+  delay(500);
+  display.fillRect( 0,  0,  128,     32,     BLACK);
+  display.display();
+  delay(500);
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(5,9);
+  display.println("YOU WIN!");
+  display.display();
+  delay(500);
+  yy1=-6;  // restart height of square one
+  yy2=-6;  // restart height of square
+  yy3=-6;  // restart height of square
+  yy4=-6;  // restart height of circle
+  yy5=-8;  // restart height of triangle
+  hit=0;   // restart of the score
+  fullcount=0; // restart of the SPEED
+  }
+}
+
+void gameover() {
+  if ((yy1>=32)||(yy2>=32)||(yy3>=32)||(yy4>=32)||(yy5>=32))  { // or
+  display.fillRect( 0,  0,  128,     32,     BLACK);
+  display.display();
+  delay(500);
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+  display.println("Game Over!");
+  display.display();
+  delay(500);
+  display.fillRect( 0,  0,  128,     32,     BLACK);
+  display.display();
+  delay(500);
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+  display.println("Game Over!");
+  display.display();
+  delay(500);
+  display.fillRect( 0,  0,  128,     32,     BLACK);
+  display.display();
+  delay(500);
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+  display.println("Game Over!");
+  display.display();
+  delay(500);
+  yy1=-6;  // restart height of square one
+  yy2=-6;  // restart height of square
+  yy3=-6;  // restart height of square
+  yy4=-6;  // restart height of circle
+  yy5=-8;  // restart height of triangle
+  hit=0;   // restart of the score
+  fullcount=0; // restart of the SPEED
+} // if function
+} // gameover function
